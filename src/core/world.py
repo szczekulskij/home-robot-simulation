@@ -1,5 +1,5 @@
 import warnings
-from src import Room
+from .room import Room
 import itertools
 
 class World:

@@ -7,7 +7,7 @@ import os
 import argparse
 import numpy as np
 
-from src import World
+from src.core import World
 from src.gui import start_gui
 
 
