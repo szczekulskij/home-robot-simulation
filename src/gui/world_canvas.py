@@ -175,26 +175,22 @@ class WorldCanvas(FigureCanvasQTAgg):
             )
             if self.show_collision_polygons:
                 self.axes.add_patch(r.get_collision_patch())
-        for h in self.world.hallways:
-            self.axes.add_patch(h.viz_patch)
-            if self.show_collision_polygons:
-                self.axes.add_patch(h.get_collision_patch())
 
         # Locations
-        for loc in self.world.locations:
-            self.axes.add_patch(loc.viz_patch)
-            t = self.axes.text(
-                loc.pose.x,
-                loc.pose.y,
-                loc.name,
-                color=loc.viz_color,
-                fontsize=10,
-                ha="center",
-                va="top",
-                clip_on=True,
-            )
-            for spawn in loc.children:
-                self.axes.add_patch(spawn.viz_patch)
+        # for loc in self.world.locations:
+        #     self.axes.add_patch(loc.viz_patch)
+        #     t = self.axes.text(
+        #         loc.pose.x,
+        #         loc.pose.y,
+        #         loc.name,
+        #         color=loc.viz_color,
+        #         fontsize=10,
+        #         ha="center",
+        #         va="top",
+        #         clip_on=True,
+        #     )
+        #     for spawn in loc.children:
+        #         self.axes.add_patch(spawn.viz_patch)
 
         # Objects
         for obj in self.world.objects:

@@ -152,7 +152,8 @@ class PyRoboSimMainWindow(QtWidgets.QMainWindow):
 
     def get_current_robot(self):
         robot_name = self.robot_textbox.currentText()
-        return self.world.get_robot_by_name(robot_name)
+        # return self.world.get_robot_by_name(robot_name)
+        return None
 
     ####################
     # State Management #
