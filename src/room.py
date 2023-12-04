@@ -7,8 +7,7 @@ class Room:
 
     def __init__(
         self,
-        name=None,
-        footprint=[],
+        room_coordinates=[],
         color=[0.4, 0.4, 0.4],
     ):
         """
@@ -21,29 +20,35 @@ class Room:
         :param color: Visualization color as an (R, G, B) tuple in the range (0.0, 1.0)
         :type color: (float, float, float), optional
         """
-        self.name = name
-        self.viz_color = color
+        self.name = "room1" # only one room for our purposes
+        if color is None:
+            self.viz_color = [0.4, 0.4, 0.4]
+        else: 
+            self.viz_color = color
 
         # Entities associated with the room
-        self.hallways = []
-        self.locations = []
-        self.graph_nodes = []
+        self.tables = []
 
         # Create the room polygon
-        self.height = height
-        if isinstance(footprint, list):
-            self.polygon = Polygon(footprint)
-        else:
-            self.polygon, _ = polygon_and_height_from_footprint(footprint)
-        if self.polygon.is_empty:
-            raise Exception("Room footprint cannot be empty.")
+        if isinstance(room_coordinates, list):
+            self.polygon = Polygon(room_coordinates)
+        else :
+            raise Exception("room_coordinates must be a list of coordinates")
 
         self.centroid = list(self.polygon.centroid.coords)[0]
-        self.update_collision_polygons()
         self.update_visualization_polygon()
 
-        # Create a navigation pose list -- if none specified, use the room centroid
-        if nav_poses is not None:
-            self.nav_poses = nav_poses
-        else:
-            self.nav_poses = [Pose.from_list(self.centroid)]
+
+        def update_visualization_polygon(self):
+            """Updates visualization polygon of the room walls."""
+            # self.viz_polygon = self.buffered_polygon.difference(self.polygon)
+            self.viz_polygon = self.polygon
+
+            self.viz_patch = patch_from_polygon(
+                self.viz_polygon,
+                facecolor=self.viz_color,
+                edgecolor=self.viz_color,
+                linewidth=2,
+                alpha=0.75,
+                zorder=2,
+            )

@@ -44,39 +44,18 @@ class World:
         self.x_bounds = None
         self.y_bounds = None
 
-    def add_room(self, **room_config):
+    def add_room(self, room_coordinates, room_color=None):
         r"""
         Adds a room to the world.
-
-        If the room does not have a specified name, it will be given an automatic
-        name of the form ``"room0"``, ``"room1"``, etc.
-
-        If the room has an empty footprint or would cause a collision with another entity in the world,
-        it will not be added to the world model.
-
-        :param \*\*room_config: Keyword arguments describing the room.
-
-            You can use ``room=Room(...)`` to directly pass in a :class:`pyrobosim.core.room.Room` object,
-            or alternatively use the same keyword arguments you would use to create a Room object.
+        :param room_coordinates: List of (x, y) coordinates describing the room footprint.
+        :param room_color: Color of the room, as an (R, G, B) tuple ????in the range (0.0, 1.0).???
         :return: room object if successfully created, else None.
         :rtype: :class:`pyrobosim.core.room.room`
         """
 
         # If it's a room object, get it from the "room" named argument.
         # Else, create a room directly from the specified arguments.
-        if "room" in room_config:
-            room = room_config["room"]
-        else:
-            room = Room(**room_config)
-
-        # If the room name is empty, automatically name it.
-        if room.name is None:
-            room.name = f"room{self.num_rooms}"
-
-        # If the room geometry is empty, do not allow it
-        if room.polygon.is_empty:
-            warnings.warn(f"Room {room.name} has empty geometry. Cannot add to world.")
-            return None
+        room = room(room_coordinates, room_color=room_color)
 
         # Check if the room collides with any other rooms or hallways
         is_valid_pose = True
