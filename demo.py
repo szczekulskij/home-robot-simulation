@@ -20,14 +20,13 @@ def create_world():
     # Add rooms
     r1coords = [(-1, -1), (1.5, -1), (1.5, 1.5), (0.5, 1.5)]
     world.add_room(
-        name="kitchen",
         room_coordinates=r1coords,
-        color=[1, 0, 0],
+        room_color=[1, 0, 0],
     )
     # r2coords = [(1.75, 2.5), (3.5, 2.5), (3.5, 4), (1.75, 4)]
-    # world.add_room(name="bedroom", footprint=r2coords, color=[0, 0.6, 0])
+    # world.add_room(footprint=r2coords, color=[0, 0.6, 0])
     # r3coords = [(-1, 1), (-1, 3.5), (-3.0, 3.5), (-2.5, 1)]
-    # world.add_room(name="bathroom", footprint=r3coords, color=[0, 0, 0.6])
+    # world.add_room(footprint=r3coords, color=[0, 0, 0.6])
 
     return world
 

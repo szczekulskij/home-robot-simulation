@@ -57,7 +57,7 @@ class World:
 
         # If it's a room object, get it from the "room" named argument.
         # Else, create a room directly from the specified arguments.
-        room = Room(room_coordinates, room_color=room_color)
+        room = Room(room_coordinates, color=room_color)
 
         # Check if the room collides with any other rooms or hallways
         # is_valid_pose = True

@@ -20,13 +20,12 @@ class Room:
         :param color: Visualization color as an (R, G, B) tuple in the range (0.0, 1.0)
         :type color: (float, float, float), optional
         """
-        if color is None:
-            self.viz_color = [0.4, 0.4, 0.4]
-        else: 
-            self.viz_color = color
+        if color is None: self.viz_color = [0.4, 0.4, 0.4]
+        else: self.viz_color = color
 
         # Entities associated with the room
         self.tables = []
+        self.name = "room1"
 
         # Create the room polygon
         if isinstance(room_coordinates, list):
@@ -37,17 +36,16 @@ class Room:
         self.centroid = list(self.polygon.centroid.coords)[0]
         self.update_visualization_polygon()
 
+    def update_visualization_polygon(self):
+        """Updates visualization polygon of the room walls."""
+        # self.viz_polygon = self.buffered_polygon.difference(self.polygon)
+        self.viz_polygon = self.polygon
 
-        def update_visualization_polygon(self):
-            """Updates visualization polygon of the room walls."""
-            # self.viz_polygon = self.buffered_polygon.difference(self.polygon)
-            self.viz_polygon = self.polygon
-
-            self.viz_patch = patch_from_polygon(
-                self.viz_polygon,
-                facecolor=self.viz_color,
-                edgecolor=self.viz_color,
-                linewidth=2,
-                alpha=0.75,
-                zorder=2,
-            )
+        self.viz_patch = patch_from_polygon(
+            self.viz_polygon,
+            facecolor=self.viz_color,
+            edgecolor=self.viz_color,
+            linewidth=2,
+            alpha=0.75,
+            zorder=2,
+        )
