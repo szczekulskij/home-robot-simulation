@@ -20,7 +20,6 @@ class Room:
         :param color: Visualization color as an (R, G, B) tuple in the range (0.0, 1.0)
         :type color: (float, float, float), optional
         """
-        self.name = "room1" # only one room for our purposes
         if color is None:
             self.viz_color = [0.4, 0.4, 0.4]
         else: 
