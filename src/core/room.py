@@ -31,7 +31,7 @@ class Room:
         else : self.name = name
 
         # Create the room polygon
-        if isinstance(coordinates, list):
+        if len(coordinates) == 4 and isinstance(coordinates, (list,tuple)):
             self.polygon = Polygon(coordinates)
         else :
             raise Exception("room_coordinates must be a list of coordinates")
