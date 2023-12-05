@@ -2,13 +2,16 @@
 
 from shapely import intersects_xy
 from shapely.plotting import patch_from_polygon
-
-from ..utils.general import EntityMetadata, InvalidEntityCategoryException
-from ..utils.pose import Pose, rot2d
+from shapely.geometry import Polygon
 
 
 class Table:
-    def __init__(self, room_coordinates = None, parent=None, name=None, color=None):
+    def __init__(
+            self, 
+            coordinates = None, 
+            parent=None, 
+            name=None, 
+            color=None):
         """
         Creates a location instance.
 
@@ -30,20 +33,23 @@ class Table:
         # Validate input
         if parent is None:
             raise Exception("Location parent must be specified.")
-        if room_coordinates is None:
+        if coordinates is None:
             raise Exception("Room coordinates pose must be specified.")
 
         # Extract the model information from the model list
         self.name = name
         self.parent = parent
-        self.room_coordinates = room_coordinates
+        if isinstance(coordinates, list):
+            self.polygon = Polygon(coordinates)
+        else :
+            raise Exception("room_coordinates must be a list of coordinates")
 
 
         if color is not None: self.viz_color = color
         else: self.viz_color = DEFAULT_VIZ_COLOR
 
-        self.create_polygons()
-        self.create_spawn_locations()
+        self.update_visualization_polygon()
+        # self.create_spawn_locations()
 
     def get_room_name(self):
         """
@@ -66,27 +72,12 @@ class Table:
         :return: True if pose is inside the polygon, else False.
         :rtype: bool
         """
-        if isinstance(pose, Pose):
-            x, y = pose.x, pose.y
-        else:
-            x, y = pose[0], pose[1]
-        return intersects_xy(self.polygon, x, y)
-
-    def create_polygons(self, inflation_radius=0.0):
-        """
-        Creates collision and visualization polygons for the location.
-
-        :param inflation_radius: Inflation radius, in meters.
-        :type inflation_radius: float, optional
-        """
-        self.raw_polygon, self.height = polygon_and_height_from_footprint(
-            self.metadata["footprint"],
-            parent_polygon=self.parent.polygon if self.parent is not None else None,
-        )
-        self.polygon = transform_polygon(self.raw_polygon, self.pose)
-        self.update_collision_polygon(inflation_radius=inflation_radius)
-        self.update_visualization_polygon()
-
+        # if isinstance(pose, Pose):
+        #     x, y = pose.x, pose.y
+        # else:
+        #     x, y = pose[0], pose[1]
+        # return intersects_xy(self.polygon, x, y)
+        return False
 
     def update_visualization_polygon(self):
         """Updates the visualization polygon for the location."""
@@ -150,48 +141,6 @@ class ObjectSpawn:
 
         self.set_pose_from_parent()
 
-    def set_pose_from_parent(self):
-        """Updates the object spawn's pose from its parent's pose."""
-        # Get the footprint and height data
-        if "footprint" not in self.metadata:
-            self.metadata["footprint"] = {"type": "parent"}
-        self.polygon, self.height = polygon_and_height_from_footprint(
-            self.metadata["footprint"],
-            pose=self.parent.pose,
-            parent_polygon=self.parent.polygon if self.parent is not None else None,
-        )
-        if self.height is None:
-            self.height = self.parent.height
-
-        self.update_visualization_polygon()
-        self.centroid = list(self.polygon.centroid.coords)[0]
-        self.pose = Pose(
-            x=self.centroid[0], y=self.centroid[1], z=0.0, q=self.parent.pose.q
-        )
-
-        # If navigation poses were specified, add them. Else, use the parent poses.
-        # Of course, only add these if they are collision-free.
-        if "nav_poses" in self.metadata:
-            self.nav_poses = []
-            if "offset" in self.metadata["footprint"]:
-                p_off = self.metadata["footprint"]["offset"]
-            else:
-                p_off = (0, 0)
-            for p in self.metadata["nav_poses"]:
-                rot_p = rot2d(
-                    (p[0] + p_off[0], p[1] + p_off[1]), self.parent.pose.get_yaw()
-                )
-                yaw = p[2] + self.parent.pose.get_yaw()
-                nav_pose = Pose(
-                    x=rot_p[0] + self.parent.pose.x,
-                    y=rot_p[1] + self.parent.pose.y,
-                    z=self.parent.pose.z,
-                    yaw=yaw,
-                )
-                if self.parent.parent.is_collision_free(nav_pose):
-                    self.nav_poses.append(nav_pose)
-        else:
-            self.nav_poses = self.parent.nav_poses
 
     def get_room_name(self):
         """
@@ -229,9 +178,6 @@ class ObjectSpawn:
             zorder=2,
         )
 
-    def add_graph_nodes(self):
-        """Creates graph nodes for searching."""
-        self.graph_nodes = [Node(p, parent=self) for p in self.nav_poses]
 
     def __repr__(self):
         """Returns printable string."""

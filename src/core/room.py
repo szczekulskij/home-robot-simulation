@@ -7,8 +7,9 @@ class Room:
 
     def __init__(
         self,
-        room_coordinates=[],
-        color=[0.4, 0.4, 0.4],
+        coordinates=[],
+        name = None,
+        color=None,
     ):
         """
         Creates a Room instance.
@@ -20,16 +21,18 @@ class Room:
         :param color: Visualization color as an (R, G, B) tuple in the range (0.0, 1.0)
         :type color: (float, float, float), optional
         """
-        if color is None: self.viz_color = [0.4, 0.4, 0.4]
+        DEFAULT_VIZ_COLOR = [0.4, 0.4, 0.4]
+        if color is None: self.viz_color = DEFAULT_VIZ_COLOR
         else: self.viz_color = color
 
         # Entities associated with the room
         self.tables = []
-        self.name = "room1"
+        if name is None: self.name = "room1"
+        else : self.name = name
 
         # Create the room polygon
-        if isinstance(room_coordinates, list):
-            self.polygon = Polygon(room_coordinates)
+        if isinstance(coordinates, list):
+            self.polygon = Polygon(coordinates)
         else :
             raise Exception("room_coordinates must be a list of coordinates")
 
