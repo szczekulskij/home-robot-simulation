@@ -8,8 +8,8 @@ from shapely.geometry import Polygon
 class Table:
     def __init__(
             self, 
-            coordinates = None, 
-            parent=None, 
+            coordinates, 
+            parent, 
             name=None, 
             color=None):
         """

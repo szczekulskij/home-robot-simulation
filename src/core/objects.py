@@ -27,7 +27,7 @@ class Object:
             If using a category with a defined color, this parameter overrides the category color.
         :type color: (float, float, float), optional
         """
-        DEFAULT_VIZ_COLOR = (0, 0, 1)
+        DEFAULT_VIZ_COLOR = (1, 1, 1)
         
         # Validate input
         if parent is None:
@@ -53,6 +53,7 @@ class Object:
         else: self.viz_color = DEFAULT_VIZ_COLOR
 
 
+        self.viz_text = None
         self.centroid = centroid
         self.update_visualization_polygon()
 
@@ -70,10 +71,9 @@ class Object:
         """Updates the visualization polygon for the object."""
         self.viz_patch = patch_from_polygon(
             self.polygon,
-            facecolor=None,
+            facecolor=self.viz_color,
             edgecolor=self.viz_color,
             linewidth=2,
-            fill=None,
             alpha=0.75,
             zorder=3,
         )

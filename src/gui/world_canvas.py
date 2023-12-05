@@ -195,14 +195,16 @@ class WorldCanvas(FigureCanvasQTAgg):
         # Objects
         for obj in self.world.objects:
             self.axes.add_patch(obj.viz_patch)
-            xmin, ymin, xmax, ymax = obj.polygon.bounds
-            x = obj.pose.x + 1.0 * (xmax - xmin)
-            y = obj.pose.y + 1.0 * (ymax - ymin)
-            obj.viz_text = self.axes.text(
-                x, y, obj.name, clip_on=True, color=obj.viz_color, fontsize=8
-            )
-        self.obj_patches = [o.viz_patch for o in (self.world.objects)]
-        self.obj_texts = [o.viz_text for o in (self.world.objects)]
+            # xmin, ymin, xmax, ymax = obj.polygon.bounds
+            # x = obj.pose.x + 1.0 * (xmax - xmin)
+            # y = obj.pose.y + 1.0 * (ymax - ymin)
+            # obj.viz_text = self.axes.text(
+            #     x, y, obj.name, clip_on=True, color=obj.viz_color, fontsize=8
+            # )
+        # self.obj_patches = [o.viz_patch for o in (self.world.objects)]
+        # self.obj_texts = [o.viz_text for o in (self.world.objects)]
+        self.obj_texts = []
+        self.obj_patches = []
 
         # Show paths and planner graphs
         if len(self.world.robots) > 0:

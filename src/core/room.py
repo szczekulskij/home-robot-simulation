@@ -7,7 +7,7 @@ class Room:
 
     def __init__(
         self,
-        coordinates=[],
+        coordinates,
         name = None,
         color=None,
     ):

@@ -1,6 +1,7 @@
 import warnings
 from .room import Room
 from .table import Table
+from .objects import Object
 import itertools
 
 class World:
@@ -154,10 +155,148 @@ class World:
 
         return table
     
+    # def remove_table(self, table_name):
+    #     """
+    #     Cleanly removes a location from the world.
+
+    #     :param loc: Location instance of name to remove.
+    #     :type loc: :class:`pyrobosim.core.locations.Location`/str
+    #     :return: True if the location was successfully removed, else False.
+    #     :rtype: bool
+    #     """
+    #     # Parse inputs
+    #     if isinstance(table_name, str):
+    #         table = self.get_location_by_name(table_name)
+
+    #     if table in self.locations:
+    #         # remove objects at the location before removing the location
+    #         for spawn in table_name.children:
+    #             while len(spawn.children) > 0:
+    #                 self.remove_object(spawn.children[-1])
+    #         # Remove location
+    #         self.locations.remove(table_name)
+    #         self.num_locations -= 1
+    #         self.location_instance_counts[table_name.category] -= 1
+    #         room = table_name.parent
+    #         room.locations.remove(table_name)
+    #         room.update_collision_polygons(self.inflation_radius)
+    #         self.name_to_entity.pop(table_name.name)
+    #         for spawn in table_name.children:
+    #             self.name_to_entity.pop(spawn.name)
+    #         return True
+    #     return False
+
+    def add_object(self, centroid, size, parent, name=None, color=None):
+        r"""
+        Adds an object to a specific location.
+
+        :param centroid: (x, y) coordinates of the centroid of the object.
+        :param size: Size of the object.
+        :param parent: Parent of the object (typically a :class:`pyrobosim.core.table.Table`)
+        :param name: Name of the object.
+        :param color: Color of the object, as an (R, G, B) tuple in the range (0.0, 1.0).
+
+        :return: Object instance if successfully created, else None.
+        :rtype: :class:`pyrobosim.core.objects.Object`
+        """
+        # If it's an Object instance, get it from the "object" named argument.
+        # Else, create an object directly from the specified arguments.
+       
+        obj = Object(centroid=centroid, size=size, parent=parent, name=name, color=color)
+
+        # Do the necessary bookkeeping
+        self.objects.append(obj)
+        self.name_to_entity[obj.name] = obj
+        self.num_objects += 1
+        return obj
+
+    # def update_object(self, obj, loc=None, pose=None):
+    #     """
+    #     Updates an existing object in the world.
+
+    #     :param obj: Object instance or name to update.
+    #     :type obj: :class:`pyrobosim.core.objects.Object`/str
+    #     :param loc: Location or object spawn instance or name. If none, uses the previous location.
+    #     :type loc: :class:`pyrobosim.core.locations.Location`/:class:`pyrobosim.core.locations.ObjectSpawn`/str, optional
+    #     :param pose: Pose of the location. If none is specified, it will be sampled.
+    #     :type pose: :class:`pyrobosim.utils.pose.Pose`, optional
+    #     :return: True if the update was successful, else False.
+    #     :rtype: bool
+    #     """
+    #     if isinstance(obj, str):
+    #         obj = self.get_object_by_name(obj)
+    #     if not isinstance(obj, Object):
+    #         warnings.warn("Could not find object. Not updating.")
+    #         return False
+
+    #     if loc is not None:
+    #         if pose is None:
+    #             warnings.warn("Cannot specify a location without a pose.")
+
+    #         # If it's a string, get the location name
+    #         if isinstance(loc, str):
+    #             loc = self.get_entity_by_name(loc)
+    #         # If it's a location object, pick an object spawn at random.
+    #         # Otherwise, if it's an object spawn, use that entity as is.
+    #         if isinstance(loc, Location):
+    #             obj_spawn = np.random.choice(loc.children)
+    #         elif isinstance(loc, ObjectSpawn):
+    #             obj_spawn = loc
+    #         else:
+    #             warnings.warn(
+    #                 f"Location {loc} did not resolve to a valid location for an object."
+    #             )
+    #             return False
+
+    #         obj.parent.children.remove(obj)
+    #         obj.parent = obj_spawn
+    #         obj_spawn.children.append(obj)
+
+    #     if pose is not None:
+    #         obj.set_pose(pose)
+    #         obj.create_polygons()
+
+    #     return True
+
+    # def remove_object(self, obj):
+    #     """
+    #     Cleanly removes an object from the world.
+
+    #     :param loc: Object instance of name to remove.
+    #     :type loc: :class:`pyrobosim.core.objects.Object`/str
+    #     :return: True if the object was successfully removed, else False.
+    #     :rtype: bool
+    #     """
+    #     if isinstance(obj, str):
+    #         obj = self.get_object_by_name(obj)
+    #     if obj in self.objects:
+    #         self.objects.remove(obj)
+    #         self.name_to_entity.pop(obj.name)
+    #         self.num_objects -= 1
+    #         obj.parent.children.remove(obj)
+    #         return True
+    #     return False
+
+    # def remove_all_objects(self, restart_numbering=True):
+    #     """
+    #     Cleanly removes all objects from the world.
+
+    #     :param restart_numbering: If True, restarts numbering of all
+    #         categories to zero, defaults to True.
+    #     :type restart_numbering: bool, optional
+    #     """
+    #     for obj in reversed(self.objects):
+    #         self.remove_object(obj)
+    #     self.num_objects = 0
+    #     if restart_numbering:
+    #         self.object_instance_counts = {}
+
+
 
     def update_bounds(self, entity, remove=False):
         """
         Updates the X and Y bounds of the world.
+        You can think about this function as something that gets called whenever we add a new room in the world and we might need to update the bounds of the world.
 
         :param entity: The entity that is being added or removed
         :type entity: :class:`pyrobosim.core.room.Room`/:class:`pyrobosim.core.hallway.Hallway`

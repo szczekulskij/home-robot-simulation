@@ -36,6 +36,14 @@ def create_world():
         name = "table1",
     )
 
+    object1 = world.add_object(
+        centroid = (-12, -3),
+        size = 0.5,
+        parent = table1,
+        name = "object1",
+        color = (1, 1, 1),
+    )
+
     return world
 
 
