@@ -33,12 +33,12 @@ class World:
         # World entities (rooms, locations, objects, etc.)
         self.name_to_entity = {}
         self.rooms = []
-        self.locations = []
+        self.tables = []
         self.objects = []
 
         # Counters
         self.num_rooms = 0
-        self.num_locations = 0
+        self.num_tables = 0
         self.num_objects = 0
         # self.location_instance_counts = {}
         self.object_instance_counts = {}
@@ -144,10 +144,10 @@ class World:
         #     return None
 
         # Do all the necessary bookkeeping
-        # table.parent.locations.append(table)
-        self.locations.append(table)
+        # table.parent.tables.append(table)
+        self.tables.append(table)
         # self.location_instance_counts[table.category] += 1
-        self.num_locations += 1
+        self.num_tables += 1
         self.name_to_entity[table.name] = table
         # for spawn in table.children:
         #     self.name_to_entity[spawn.name] = spawn

@@ -48,6 +48,7 @@ class Table:
         if color is not None: self.viz_color = color
         else: self.viz_color = DEFAULT_VIZ_COLOR
 
+        self.centroid = list(self.polygon.centroid.coords)[0]
         self.update_visualization_polygon()
         # self.create_spawn_locations()
 
@@ -86,7 +87,7 @@ class Table:
             facecolor=None,
             edgecolor=self.viz_color,
             linewidth=2,
-            fill=None,
+            fill=[0.6, 0.6, 0.6],
             alpha=0.75,
             zorder=2,
         )

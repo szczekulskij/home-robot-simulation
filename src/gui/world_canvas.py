@@ -177,20 +177,20 @@ class WorldCanvas(FigureCanvasQTAgg):
                 self.axes.add_patch(r.get_collision_patch())
 
         # Locations
-        # for loc in self.world.locations:
-        #     self.axes.add_patch(loc.viz_patch)
-        #     t = self.axes.text(
-        #         loc.pose.x,
-        #         loc.pose.y,
-        #         loc.name,
-        #         color=loc.viz_color,
-        #         fontsize=10,
-        #         ha="center",
-        #         va="top",
-        #         clip_on=True,
-        #     )
-        #     for spawn in loc.children:
-        #         self.axes.add_patch(spawn.viz_patch)
+        for t in self.world.tables:
+            self.axes.add_patch(t.viz_patch)
+            t = self.axes.text(
+                t.centroid[0],
+                t.centroid[1],
+                t.name,
+                color=t.viz_color,
+                fontsize=10,
+                ha="center",
+                va="top",
+                clip_on=True,
+            )
+            # for spawn in loc.children:
+            #     self.axes.add_patch(spawn.viz_patch)
 
         # Objects
         for obj in self.world.objects:
