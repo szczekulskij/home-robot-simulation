@@ -47,6 +47,7 @@ def create_world():
     return world
 
 
+
 if __name__ == "__main__":
     world = create_world()
     start_gui(world)
