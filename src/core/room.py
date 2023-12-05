@@ -16,7 +16,7 @@ class Room:
         :param name: Room name.
         :type name: str, optional
         :param footprint: Point list or Shapely polygon describing the room 2D footprint (required).
-        :type footprint: :class:`shapely.geometry.Polygon`/list[:class:`pyrobosim.utils.pose.Pose`]
+        :type footprint: :class:`shapely.geometry.Polygon`
         :param color: Visualization color as an (R, G, B) tuple in the range (0.0, 1.0)
         :type color: (float, float, float), optional
         """

@@ -1,5 +1,6 @@
 import warnings
 from .room import Room
+from .table import Table
 import itertools
 
 class World:
@@ -92,21 +93,71 @@ class World:
             warnings.warn(f"No room {room_name} found for removal.")
             return False
 
-        # Remove hallways associated with the room
-        while len(room.hallways) > 0:
-            self.remove_hallway(room.hallways[-1])
-
         # Remove locations in the room
-        while len(room.locations) > 0:
-            self.remove_location(room.locations[-1])
+        while len(room.tables) > 0:
+            self.remove_location(room.tables[-1])
 
         # Remove the room itself
         self.rooms.remove(room)
         self.name_to_entity.pop(room_name)
         self.num_rooms -= 1
         self.update_bounds(entity=room, remove=True)
-
         return True
+    
+
+
+    def add_table(self, room_coordinates = None, parent=None, name=None, color=None):
+        r"""
+        Adds a location at the specified parent entity, usually a room.
+
+        If the location does not have a specified name, it will be given an
+        automatic name using its category, e.g., ``"table0"``.
+
+        :param \*\*location_config: Keyword arguments describing the location.
+
+            You can use ``location=Location(...)`` to directly pass in a :class:`pyrobosim.core.location.Location`
+            object, or alternatively use the same keyword arguments you would use to create a Location object.
+
+            You can also pass in the room name as the ``parent`` argument, and it will be resolved to an actual room object, if it exists in the world.
+
+        :return: Location object if successfully created, else None.
+        :rtype: :class:`pyrobosim.core.locations.Location`
+        """
+        # If it's a location object, get it from the "location" named argument.
+        # Else, create a location directly from the specified arguments.
+        if parent is None : 
+            warnings.warn("Location instance or parent must be specified.")
+            return None
+        else: 
+            table = Table(name=name, color=color, parent=parent)
+
+
+
+
+        # Check that the location fits within the room and is not in collision with
+        # other locations already in the room. Else, warn and do not add it.
+        is_valid_pose = table.polygon.within(table.parent.polygon)
+        if is_valid_pose:
+            for other_tables in table.parent.locations:
+                if table.polygon.intersects(other_tables.polygon):
+                    is_valid_pose = False
+                    break
+        if not is_valid_pose:
+            warnings.warn(f"Location {table.name} in collision. Cannot add to world.")
+            return None
+
+        # Do all the necessary bookkeeping
+        table.update_collision_polygon(self.inflation_radius)
+        table.parent.locations.append(table)
+        table.parent.update_collision_polygons(self.inflation_radius)
+        self.locations.append(table)
+        self.location_instance_counts[table.category] += 1
+        self.num_locations += 1
+        self.name_to_entity[table.name] = table
+        for spawn in table.children:
+            self.name_to_entity[spawn.name] = spawn
+
+        return table
     
 
     def update_bounds(self, entity, remove=False):
