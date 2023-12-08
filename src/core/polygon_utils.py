@@ -126,6 +126,8 @@ def sample_from_polygon(polygon, max_tries=100):
     :return: Sampled pose contained within the polygon. If no pose could be found, returns (None, None)
     :rtype: (float, float)
     """
+    if type(polygon) is not Polygon: polygon = Polygon(polygon)
+
     xmin, ymin, xmax, ymax = polygon.bounds
     for _ in range(max_tries):
         sample_x = np.random.uniform(xmin, xmax)
@@ -208,3 +210,9 @@ def sample_from_polygon(polygon, max_tries=100):
 #     dims = [x_max_rot - x_min_rot, y_max_rot - y_min_rot]
 
 #     return (pose, dims, rect_pts)
+
+def check_if_polygons_overlap(poly1, poly2):
+    return poly1.intersects(poly2)
+
+def inflate_polygon(poly, inflation_distance):
+    return poly.buffer(inflation_distance)
