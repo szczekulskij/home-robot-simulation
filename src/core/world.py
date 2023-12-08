@@ -1,4 +1,9 @@
+import math
+import random
 import warnings
+
+from core.polygon_utils import box_to_coords, check_if_polygons_overlap, inflate_polygon, sample_from_polygon
+from shapely.geometry import Polygon
 from .room import Room
 from .table import Table
 from .objects import Object
@@ -56,55 +61,12 @@ class World:
         :return: room object if successfully created, else None.
         :rtype: :class:`pyrobosim.core.room.room`
         """
-
-        # If it's a room object, get it from the "room" named argument.
-        # Else, create a room directly from the specified arguments.
         room = Room(room_coordinates, name = room_name, color=room_color)
-
-        # Check if the room collides with any other rooms or hallways
-        # is_valid_pose = True
-        # for other_loc in self.rooms + self.hallways:
-        #     if room.external_collision_polygon.intersects(
-        #         other_loc.external_collision_polygon
-        #     ):
-        #         is_valid_pose = False
-        #         break
-        # if not is_valid_pose:
-        #     warnings.warn(f"Room {room.name} in collision. Cannot add to world.")
-        #     return None
-
         self.rooms.append(room)
         self.name_to_entity[room.name] = room
         self.num_rooms += 1
         self.update_bounds(entity=room)
-
         return room
-
-    def remove_room(self, room_name):
-        """
-        Removes a room from the world by name.
-
-        :param room_name: Name of room to remove.
-        :type room_name: str
-        :return: True if the room was successfully removed, else False.
-        :rtype: bool
-        """
-        room = self.get_room_by_name(room_name)
-        if room is None:
-            warnings.warn(f"No room {room_name} found for removal.")
-            return False
-
-        # Remove locations in the room
-        while len(room.tables) > 0:
-            self.remove_location(room.tables[-1])
-
-        # Remove the room itself
-        self.rooms.remove(room)
-        self.name_to_entity.pop(room_name)
-        self.num_rooms -= 1
-        self.update_bounds(entity=room, remove=True)
-        return True
-    
 
 
     def add_table(self, table_coordinates = None, parent=None, name=None, color=None):
@@ -118,8 +80,6 @@ class World:
         :return: Location object if successfully created, else None.
         :rtype: :class:`pyrobosim.core.room.Room`
         """
-        # If it's a location object, get it from the "location" named argument.
-        # Else, create a location directly from the specified arguments.
         if parent is None : 
             warnings.warn("Location instance or parent must be specified.")
             return None
@@ -129,62 +89,87 @@ class World:
         else: 
             table = Table(name=name, coordinates = table_coordinates, parent=parent, color=color,)
 
-
-
-
-        # Check that the location fits within the room and is not in collision with
-        # other locations already in the room. Else, warn and do not add it.
-        # is_valid_pose = table.polygon.within(table.parent.polygon)
-        # if is_valid_pose:
-        #     for other_tables in table.parent.locations:
-        #         if table.polygon.intersects(other_tables.polygon):
-        #             is_valid_pose = False
-        #             break
-        # if not is_valid_pose:
-        #     warnings.warn(f"Location {table.name} in collision. Cannot add to world.")
-        #     return None
-
-        # Do all the necessary bookkeeping
-        # table.parent.tables.append(table)
         self.tables.append(table)
-        # self.location_instance_counts[table.category] += 1
         self.num_tables += 1
         self.name_to_entity[table.name] = table
-        # for spawn in table.children:
-        #     self.name_to_entity[spawn.name] = spawn
-
         return table
     
-    # def remove_table(self, table_name):
-    #     """
-    #     Cleanly removes a location from the world.
 
-    #     :param loc: Location instance of name to remove.
-    #     :type loc: :class:`pyrobosim.core.locations.Location`/str
-    #     :return: True if the location was successfully removed, else False.
-    #     :rtype: bool
-    #     """
-    #     # Parse inputs
-    #     if isinstance(table_name, str):
-    #         table = self.get_location_by_name(table_name)
+    def add_random_table(
+            self, 
+            room_name,
+            min_distance_between_tables = 0.5, 
+            table_size=None, 
+            rotation_angle=None, 
+            max_iter = 50000
+            ):
+        ''' 
+        :param room_coords: coordinates of the room
+        '''
+        # 1. Handle input
+        if room_name is None: raise ValueError('room_name must be specified')
 
-    #     if table in self.locations:
-    #         # remove objects at the location before removing the location
-    #         for spawn in table_name.children:
-    #             while len(spawn.children) > 0:
-    #                 self.remove_object(spawn.children[-1])
-    #         # Remove location
-    #         self.locations.remove(table_name)
-    #         self.num_locations -= 1
-    #         self.location_instance_counts[table_name.category] -= 1
-    #         room = table_name.parent
-    #         room.locations.remove(table_name)
-    #         room.update_collision_polygons(self.inflation_radius)
-    #         self.name_to_entity.pop(table_name.name)
-    #         for spawn in table_name.children:
-    #             self.name_to_entity.pop(spawn.name)
-    #         return True
-    #     return False
+        if table_size == None: table_size = (random.randint(4,10), random.randint(2,5))
+        elif table_size == 'small': table_size = (1,2)
+        elif table_size == 'medium': table_size = (1,3)
+        elif table_size == 'large': table_size = (2,4)
+        elif isinstance (table_size, (tuple, list)) and len(table_size) == 2: pass
+        else : raise ValueError('table_size must be "small", "medium", "large" or a tuple of two numbers')
+
+        if rotation_angle == None: rotation_angle = random.randint(0,360)
+        elif isinstance(rotation_angle, (float, int)): pass
+        else : raise ValueError('rotation_angle must be an integer')
+        rotation_angle = math.radians(rotation_angle) # transfer to radians
+
+        room_coords = self.get_room_by_name(room_name).polygon.exterior.coords
+        other_tables_coords = [i.polygon.exterior.coords for i in self.tables]
+        
+        # 2. Iterate until a valid table is found
+        i = 0
+        while True and i < max_iter:
+            i += 1
+            table_coords = self.generate_random_table_coords(room_coords, table_size, rotation_angle)
+            if self.check_if_table_is_valid(room_coords, table_coords, other_tables_coords, min_distance_between_tables): 
+                return table_coords
+
+
+    def generate_random_table_coords(room_coords, table_size = None, rotation_angle = None):
+
+
+        # 2. Generate random origin point
+        origin_coords = sample_from_polygon(room_coords)
+        # 3. generate random coordinates for the table
+        table_coords = box_to_coords(table_size, origin_coords, rotation_angle)
+        return table_coords
+
+
+    def check_if_table_is_valid(room_coords, table_coords, other_tables_coords, min_distance_between_tables):
+        # check if the table is inside the room
+        if not Polygon(room_coords).contains(Polygon(table_coords)): return False
+        # check if table is not overlapping (or too close) to other tables
+        for other_table_coords in other_tables_coords:
+            if check_if_polygons_overlap(Polygon(table_coords), Polygon(other_table_coords)): return False # this line probs unnecessary
+            if check_if_polygons_overlap(inflate_polygon(Polygon(table_coords), min_distance_between_tables), Polygon(other_table_coords)): return False
+        return True
+
+
+    def plot(room_coord, tables_coord, objects_coord):
+        fig = plt.figure(1, figsize=(5,5), dpi=90)
+        ax = fig.add_subplot(111)
+        patch = patch_from_polygon(Polygon(room_coord), facecolor=[0,0,0], edgecolor=[0,0,0], alpha=0.5, zorder=2)
+        ax.add_patch(patch)
+        for table_coord in tables_coord:
+            patch = patch_from_polygon(Polygon(table_coord), facecolor=[0,1,0], edgecolor=[0,0,0], alpha=0.5, zorder=2)
+            ax.add_patch(patch)
+
+        for object_coord in objects_coord:
+            patch = patch_from_polygon(object_coord, facecolor=[0,0,1], edgecolor=[0,0,0], alpha=0.5, zorder=2)
+            ax.add_patch(patch)
+        
+        ax.set_xlim(-20, 20)
+        ax.set_ylim(-20, 20)
+        plt.show()
+        
 
     def add_object(self, centroid, size, parent, name=None, color=None):
         r"""
@@ -209,88 +194,6 @@ class World:
         self.name_to_entity[obj.name] = obj
         self.num_objects += 1
         return obj
-
-    # def update_object(self, obj, loc=None, pose=None):
-    #     """
-    #     Updates an existing object in the world.
-
-    #     :param obj: Object instance or name to update.
-    #     :type obj: :class:`pyrobosim.core.objects.Object`/str
-    #     :param loc: Location or object spawn instance or name. If none, uses the previous location.
-    #     :type loc: :class:`pyrobosim.core.locations.Location`/:class:`pyrobosim.core.locations.ObjectSpawn`/str, optional
-    #     :param pose: Pose of the location. If none is specified, it will be sampled.
-    #     :type pose: :class:`pyrobosim.utils.pose.Pose`, optional
-    #     :return: True if the update was successful, else False.
-    #     :rtype: bool
-    #     """
-    #     if isinstance(obj, str):
-    #         obj = self.get_object_by_name(obj)
-    #     if not isinstance(obj, Object):
-    #         warnings.warn("Could not find object. Not updating.")
-    #         return False
-
-    #     if loc is not None:
-    #         if pose is None:
-    #             warnings.warn("Cannot specify a location without a pose.")
-
-    #         # If it's a string, get the location name
-    #         if isinstance(loc, str):
-    #             loc = self.get_entity_by_name(loc)
-    #         # If it's a location object, pick an object spawn at random.
-    #         # Otherwise, if it's an object spawn, use that entity as is.
-    #         if isinstance(loc, Location):
-    #             obj_spawn = np.random.choice(loc.children)
-    #         elif isinstance(loc, ObjectSpawn):
-    #             obj_spawn = loc
-    #         else:
-    #             warnings.warn(
-    #                 f"Location {loc} did not resolve to a valid location for an object."
-    #             )
-    #             return False
-
-    #         obj.parent.children.remove(obj)
-    #         obj.parent = obj_spawn
-    #         obj_spawn.children.append(obj)
-
-    #     if pose is not None:
-    #         obj.set_pose(pose)
-    #         obj.create_polygons()
-
-    #     return True
-
-    # def remove_object(self, obj):
-    #     """
-    #     Cleanly removes an object from the world.
-
-    #     :param loc: Object instance of name to remove.
-    #     :type loc: :class:`pyrobosim.core.objects.Object`/str
-    #     :return: True if the object was successfully removed, else False.
-    #     :rtype: bool
-    #     """
-    #     if isinstance(obj, str):
-    #         obj = self.get_object_by_name(obj)
-    #     if obj in self.objects:
-    #         self.objects.remove(obj)
-    #         self.name_to_entity.pop(obj.name)
-    #         self.num_objects -= 1
-    #         obj.parent.children.remove(obj)
-    #         return True
-    #     return False
-
-    # def remove_all_objects(self, restart_numbering=True):
-    #     """
-    #     Cleanly removes all objects from the world.
-
-    #     :param restart_numbering: If True, restarts numbering of all
-    #         categories to zero, defaults to True.
-    #     :type restart_numbering: bool, optional
-    #     """
-    #     for obj in reversed(self.objects):
-    #         self.remove_object(obj)
-    #     self.num_objects = 0
-    #     if restart_numbering:
-    #         self.object_instance_counts = {}
-
 
 
     def update_bounds(self, entity, remove=False):
