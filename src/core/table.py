@@ -39,10 +39,10 @@ class Table:
         # Extract the model information from the model list
         self.name = name
         self.parent = parent
-        if len(coordinates) == 4 and isinstance(coordinates, (list,tuple)):
+        if isinstance(coordinates, (list,tuple)):
             self.polygon = Polygon(coordinates)
         else :
-            raise Exception("room_coordinates must be a list of coordinates")
+            raise Exception("table_coordinates must be a list of coordinates")
 
 
         if color is not None: self.viz_color = color

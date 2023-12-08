@@ -18,7 +18,7 @@ def create_world():
     world = World()
 
     # Add rooms
-    r1coords = [(-20, -10), (20, -10), (20, 10), (-20, 10)]
+    r1coords = [(-20, -20), (20, -20), (20, 20), (-20, 20)]
     world.add_room(
         room_coordinates=r1coords,
         room_name = "room1",
@@ -36,13 +36,19 @@ def create_world():
         name = "table1",
     )
 
-    object1 = world.add_object(
-        centroid = (-12, -3),
-        size = 0.5,
-        parent = table1,
-        name = "object1",
-        color = (1, 1, 1),
+    table2 = world.add_random_table(
+        room_name = "room1",
+        parent = "room1",
+        name = "table2",
     )
+
+    # object1 = world.add_object(
+    #     centroid = (-12, -3),
+    #     size = 0.5,
+    #     parent = table1,
+    #     name = "object1",
+    #     color = (1, 1, 1),
+    # )
 
     return world
 

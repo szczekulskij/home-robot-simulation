@@ -46,7 +46,7 @@ class Object:
         if len(centroid) == 2 and isinstance(centroid, (list,tuple)):
             self.polygon = Point(centroid).buffer(size)
         else :
-            raise Exception("room_coordinates must be a list of coordinates")
+            raise Exception("object_coordinates must be a list of coordinates")
 
 
         if color is not None: self.viz_color = color

@@ -2,7 +2,7 @@ import math
 import random
 import warnings
 
-from core.polygon_utils import box_to_coords, check_if_polygons_overlap, inflate_polygon, sample_from_polygon
+from .polygon_utils import box_to_coords, check_if_polygons_overlap, inflate_polygon, sample_from_polygon
 from shapely.geometry import Polygon
 from .room import Room
 from .table import Table
@@ -96,6 +96,27 @@ class World:
     
 
     def add_random_table(
+            self,
+            room_name,
+            parent = None,
+            name = None,
+            color = None,
+            min_distance_between_tables = 0.5, 
+            table_size=None, 
+            rotation_angle=None, 
+            max_iter = 50000):
+        
+        table_coords = self.generate_random_table_coords(
+            room_name,
+            min_distance_between_tables = min_distance_between_tables, 
+            table_size = table_size, 
+            rotation_angle = rotation_angle, 
+            max_iter = max_iter
+            )
+        
+        return self.add_table(table_coordinates = table_coords, parent=parent, name=name, color=color)
+
+    def generate_random_table_coords(
             self, 
             room_name,
             min_distance_between_tables = 0.5, 
@@ -103,12 +124,8 @@ class World:
             rotation_angle=None, 
             max_iter = 50000
             ):
-        ''' 
-        :param room_coords: coordinates of the room
-        '''
         # 1. Handle input
         if room_name is None: raise ValueError('room_name must be specified')
-
         if table_size == None: table_size = (random.randint(4,10), random.randint(2,5))
         elif table_size == 'small': table_size = (1,2)
         elif table_size == 'medium': table_size = (1,3)
@@ -121,55 +138,17 @@ class World:
         else : raise ValueError('rotation_angle must be an integer')
         rotation_angle = math.radians(rotation_angle) # transfer to radians
 
-        room_coords = self.get_room_by_name(room_name).polygon.exterior.coords
-        other_tables_coords = [i.polygon.exterior.coords for i in self.tables]
+        room_polygon = self.get_room_by_name(room_name).polygon
+        other_tables_polygons = [i.polygon for i in self.tables]
         
         # 2. Iterate until a valid table is found
         i = 0
         while True and i < max_iter:
             i += 1
-            table_coords = self.generate_random_table_coords(room_coords, table_size, rotation_angle)
-            if self.check_if_table_is_valid(room_coords, table_coords, other_tables_coords, min_distance_between_tables): 
+            table_coords = sample_random_table_coords(room_polygon, table_size, rotation_angle)
+            if check_if_table_is_valid(room_polygon, table_coords, other_tables_polygons, min_distance_between_tables): 
                 return table_coords
 
-
-    def generate_random_table_coords(room_coords, table_size = None, rotation_angle = None):
-
-
-        # 2. Generate random origin point
-        origin_coords = sample_from_polygon(room_coords)
-        # 3. generate random coordinates for the table
-        table_coords = box_to_coords(table_size, origin_coords, rotation_angle)
-        return table_coords
-
-
-    def check_if_table_is_valid(room_coords, table_coords, other_tables_coords, min_distance_between_tables):
-        # check if the table is inside the room
-        if not Polygon(room_coords).contains(Polygon(table_coords)): return False
-        # check if table is not overlapping (or too close) to other tables
-        for other_table_coords in other_tables_coords:
-            if check_if_polygons_overlap(Polygon(table_coords), Polygon(other_table_coords)): return False # this line probs unnecessary
-            if check_if_polygons_overlap(inflate_polygon(Polygon(table_coords), min_distance_between_tables), Polygon(other_table_coords)): return False
-        return True
-
-
-    def plot(room_coord, tables_coord, objects_coord):
-        fig = plt.figure(1, figsize=(5,5), dpi=90)
-        ax = fig.add_subplot(111)
-        patch = patch_from_polygon(Polygon(room_coord), facecolor=[0,0,0], edgecolor=[0,0,0], alpha=0.5, zorder=2)
-        ax.add_patch(patch)
-        for table_coord in tables_coord:
-            patch = patch_from_polygon(Polygon(table_coord), facecolor=[0,1,0], edgecolor=[0,0,0], alpha=0.5, zorder=2)
-            ax.add_patch(patch)
-
-        for object_coord in objects_coord:
-            patch = patch_from_polygon(object_coord, facecolor=[0,0,1], edgecolor=[0,0,0], alpha=0.5, zorder=2)
-            ax.add_patch(patch)
-        
-        ax.set_xlim(-20, 20)
-        ax.set_ylim(-20, 20)
-        plt.show()
-        
 
     def add_object(self, centroid, size, parent, name=None, color=None):
         r"""
@@ -241,3 +220,43 @@ class World:
             warnings.warn(
                 f"Updating bounds with unsupported entity type {type(entity)}"
             )
+
+    def get_room_by_name(self, name):
+        """
+        Gets a room object by its name.
+
+        :param name: Name of room.
+        :type name: str
+        :return: Room instance matching the input name, or ``None`` if not valid.
+        :rtype: :class:`pyrobosim.core.room.Room`
+        """
+        if name not in self.name_to_entity:
+            warnings.warn(f"Room not found: {name}")
+            return None
+
+        entity = self.name_to_entity[name]
+        if not isinstance(entity, Room):
+            warnings.warn(f"Entity {name} found but it is not a Room.")
+            return None
+
+        return entity
+    
+
+
+######################## HELPER FUNCTIONS ##############################
+def sample_random_table_coords(room_polygon, table_size = None, rotation_angle = None):
+    # 1. Generate random origin point
+    origin_coords = sample_from_polygon(room_polygon)
+    # 2. generate random coordinates for the table
+    table_coords = box_to_coords(table_size, origin_coords, rotation_angle)
+    return table_coords
+
+
+def check_if_table_is_valid(room_polygon, table_coords, other_tables_polygons, min_distance_between_tables):
+    # check if the table is inside the room
+    if not room_polygon.contains(Polygon(table_coords)): return False
+    # check if table is not overlapping (or too close) to other tables
+    for other_table_poly in other_tables_polygons:
+        if check_if_polygons_overlap(Polygon(table_coords), other_table_poly): return False # this line probs unnecessary
+        if check_if_polygons_overlap(inflate_polygon(Polygon(table_coords), min_distance_between_tables), other_table_poly): return False
+    return True
