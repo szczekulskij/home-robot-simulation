@@ -216,3 +216,6 @@ def check_if_polygons_overlap(poly1, poly2):
 
 def inflate_polygon(poly, inflation_distance):
     return poly.buffer(inflation_distance)
+
+def inflate_circle(circle, inflation_distance):
+    return circle.buffer(inflation_distance)
