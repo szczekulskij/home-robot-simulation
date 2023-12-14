@@ -125,13 +125,23 @@ class World:
             max_iter = 50000
             ):
         # 1. Handle input
-        if room_name is None: raise ValueError('room_name must be specified')
-        if table_size == None: table_size = (random.randint(4,10), random.randint(2,5))
-        elif table_size == 'small': table_size = (1,2)
-        elif table_size == 'medium': table_size = (1,3)
-        elif table_size == 'large': table_size = (2,4)
-        elif isinstance (table_size, (tuple, list)) and len(table_size) == 2: pass
-        else : raise ValueError('table_size must be "small", "medium", "large" or a tuple of two numbers')
+    match room_name:
+    case None:
+        raise ValueError('room_name must be specified')
+    
+    match table_size:
+        case None:
+            table_size = (random.randint(4, 10), random.randint(2, 5))
+        case 'small':
+            table_size = (1, 2)
+        case 'medium':
+            table_size = (1, 3)
+        case 'large':
+            table_size = (2, 4)
+        case isinstance(table_size, (tuple, list)) and len(table_size) == 2:
+            pass
+        case _:
+            raise ValueError('table_size must be "small", "medium", "large" or a tuple of two numbers')
 
         if rotation_angle == None: rotation_angle = random.randint(0,360)
         elif isinstance(rotation_angle, (float, int)): pass
