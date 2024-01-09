@@ -10,7 +10,7 @@ import warnings
 
 from scipy.spatial import ConvexHull
 from shapely.affinity import rotate, translate
-from shapely.geometry import Point, Polygon, CAP_STYLE, JOIN_STYLE
+from shapely.geometry import Point, Polygon, CAP_STYLE, JOIN_STYLE, MultiPolygon
 from shapely.geometry.polygon import orient
 
 
@@ -126,7 +126,9 @@ def sample_from_polygon(polygon, max_tries=100):
     :return: Sampled pose contained within the polygon. If no pose could be found, returns (None, None)
     :rtype: (float, float)
     """
-    if type(polygon) is not Polygon: polygon = Polygon(polygon)
+    if type(polygon) is not Polygon: 
+        if type(polygon) is not MultiPolygon: 
+            polygon = Polygon(polygon)
 
     xmin, ymin, xmax, ymax = polygon.bounds
     for _ in range(max_tries):
