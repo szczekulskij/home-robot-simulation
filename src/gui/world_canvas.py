@@ -166,7 +166,8 @@ class WorldCanvas(FigureCanvasQTAgg):
             t = self.axes.text(
                 r.centroid[0],
                 r.centroid[1],
-                r.name,
+                # r.name,
+                "", # remove text
                 color=r.viz_color,
                 fontsize=12,
                 ha="center",
@@ -182,7 +183,8 @@ class WorldCanvas(FigureCanvasQTAgg):
             t = self.axes.text(
                 t.centroid[0],
                 t.centroid[1],
-                t.name,
+                # t.name,
+                "", # remove text
                 color=t.viz_color,
                 fontsize=10,
                 ha="center",
