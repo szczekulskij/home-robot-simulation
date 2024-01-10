@@ -114,6 +114,8 @@ class World:
             max_iter = max_iter
             )
         
+        print("table_coords:", table_coords)
+        
         return self.add_table(table_coordinates = table_coords, parent=parent, name=name, color=color)
 
     def generate_random_table_coords(

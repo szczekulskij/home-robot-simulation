@@ -6,18 +6,16 @@ Test script showing how to build a world and use it
 import os
 import argparse
 import numpy as np
+import random
 
 from src.core import World
 from src.gui import start_gui
 
-
-
-
-def create_world():
+def generate_random_world():
     """Create a test world"""
     world = World()
 
-    # Add rooms
+    # 1. Create a room
     r1coords = [(-20, -20), (20, -20), (20, 20), (-20, 20)]
     world.add_room(
         room_coordinates=r1coords,
@@ -25,41 +23,28 @@ def create_world():
         room_color=[0, 0, 0],
     )
 
-    table1 = world.add_random_table(
-        room_name = "room1",
-        parent = "room1",
-        name = "table1",
-    )
+    # 2. Add tables
+    nr_tables = random.randint(2, 3)
+    for i in range(nr_tables):
+        table_name = "table" + str(i)
+        world.add_random_table(
+            room_name="room1",
+            parent = "room1",
+            name=table_name,
+        )
 
-    table2 = world.add_random_table(
-        room_name = "room1",
-        parent = "room1",
-        name = "table2",
-    )
-
-    object1 = world.add_random_object(
-        table_name = "table1", 
-        min_distance_between_objects = 0.1, 
-        object_size=None, 
-        max_iter = 1000)
-    
-
-    object2 = world.add_random_object(
-        table_name = "table1", 
-        min_distance_between_objects = 0.1, 
-        object_size=None, 
-        max_iter = 1000)
-    
-    object3 = world.add_random_object(
-        table_name = "table1", 
-        min_distance_between_objects = 0.1, 
-        object_size=None, 
-        max_iter = 1000)
+    # 3. Add objects
+    for table in world.tables:
+        nr_objects = random.randint(2, 5)
+        for i in range(nr_objects):
+            world.add_random_object(
+                table_name=table.name,
+            )
 
     return world
 
 
 
 if __name__ == "__main__":
-    world = create_world()
+    world = generate_random_world()
     start_gui(world)
