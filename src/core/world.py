@@ -2,8 +2,8 @@ import math
 import random
 import warnings
 
-from .polygon_utils import box_to_coords, check_if_polygons_overlap, inflate_polygon, sample_from_polygon
-from shapely.geometry import Polygon
+from .polygon_utils import box_to_coords, check_if_polygons_overlap, inflate_circle, inflate_polygon, sample_from_polygon
+from shapely.geometry import Polygon, Point
 from .room import Room
 from .table import Table
 from .objects import Object
@@ -150,7 +150,7 @@ class World:
                 return table_coords
 
 
-    def add_object(self, centroid, size, parent, name=None, color=None):
+    def add_object(self, centroid, radius, parent, name=None, color=None):
         r"""
         Adds an object to a specific location.
 
@@ -166,13 +166,44 @@ class World:
         # If it's an Object instance, get it from the "object" named argument.
         # Else, create an object directly from the specified arguments.
        
-        obj = Object(centroid=centroid, size=size, parent=parent, name=name, color=color)
+        obj = Object(centroid=centroid, radius=radius, parent=parent, name=name, color=color, nr_of_other_objects = self.num_objects)
 
         # Do the necessary bookkeeping
         self.objects.append(obj)
         self.name_to_entity[obj.name] = obj
         self.num_objects += 1
         return obj
+    
+    def add_random_object(self, table_name, min_distance_between_objects = 0.1, object_size=None, max_iter = 1000):
+        ''' 
+        :param table_coords: list of tuples (x,y) shape:(4,2) representing the coordinates of the tables
+        :param other_objects: list of CircleObjects representing the other objects already present on the tables
+        :param min_distance_between_objects: minimum distance between objects (float)
+        :param object_size: string/None/(float,float) representing the size.
+            For string ("small", "medium", "large") of the object or a number representing the radius of the object.
+            If None a random size will be chosen
+            if (float) the number is the radius of the object
+        :param max_iter: maximum number of iterations to try to generate an object (only useful when generating random objects, when it'll eventually find a small object that fits)
+        :return: CircleObject representing the object
+        '''
+        table_coords = self.name_to_entity[table_name].coordinates
+
+        i = 0
+        if object_size == None: # eg random object size
+            while True and i < max_iter:
+                i += 1
+                circleObject = generate_random_object_coords(table_coords, self.objects, min_distance_between_objects, object_size)
+                if circleObject != False: # not False
+                    self.add_object(centroid=circleObject.centroid, radius=circleObject.radius, parent=circleObject.parent, name=circleObject.name, color=circleObject.color)
+                    break
+            if circleObject == False: print("failed to generate object, trying again")
+        
+        else :
+            circleObject = generate_random_object_coords(table_coords, self.objects, min_distance_between_objects, object_size)
+            if circleObject != False: # not False
+                self.add_object(centroid=circleObject.centroid, radius=circleObject.radius, parent=circleObject.parent, name=circleObject.name, color=circleObject.color)
+            else: 
+                print("failed to generate object, trying again")
 
 
     def update_bounds(self, entity, remove=False):
@@ -260,3 +291,42 @@ def check_if_table_is_valid(room_polygon, table_coords, other_tables_polygons, m
         if check_if_polygons_overlap(Polygon(table_coords), other_table_poly): return False # this line probs unnecessary
         if check_if_polygons_overlap(inflate_polygon(Polygon(table_coords), min_distance_between_tables), other_table_poly): return False
     return True
+
+
+
+def generate_random_object_coords(table_coords, other_objects, min_distance_between_objects, object_size = None):
+    # 1. Handle input
+    if object_size == None: object_size = random.random() * 2 + 0.5
+    # if object_size == None: object_size = random.random() * 1 + 0.5
+    elif object_size == 'small': object_size = 1
+    elif object_size == 'medium': object_size = 2
+    elif object_size == 'large': object_size = 3
+    elif isinstance (object_size, (int, float)) : pass 
+    else : raise ValueError('object_size must be "small", "medium", "large" or a number')
+
+
+    # 2. Get the space of a table that is not occupied by other objects, and can fit the new object
+    free_space = Polygon(table_coords)
+    # 2.1 Reduce table polygon by "object_size" distance on the edges of it
+    # 2.1.1 - remove radius from height and width
+    free_space = free_space.buffer(-object_size)
+    # 2.1.2 - add 4 circles on the corners of the table (of size of the object we're adding) and remove them from the space as well
+    corner_circles_ = [Point(table_coords[i]).buffer(object_size) for i in range(4)]
+    for circle in corner_circles_:
+        free_space = free_space.difference(circle)
+    # 2.2 Increase of all the object sizes by the (min_distance_between_objects + object_size) value
+    other_objects_coords_ = [inflate_circle(object_coords.polygon, min_distance_between_objects + object_size) for object_coords in other_objects]
+    # 2.3 Get the space of a table that is not occupied by other objects
+    for object in other_objects_coords_:
+        free_space = free_space.difference(object)
+
+    # 3. generate random coordinates for the table
+    try:
+        origin_coords = sample_from_polygon(free_space)
+    except:
+        return False # unable to sample from polygon
+    object_size = round(object_size, 1)
+    object = Point(origin_coords).buffer(object_size)
+
+    # it's only temp object, it gets converted to proper object down the line
+    return Object(centroid=origin_coords, radius=object_size, parent="None", name=None, color=None, nr_of_other_objects = len(other_objects))

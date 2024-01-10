@@ -37,6 +37,7 @@ class Table:
             raise Exception("Room coordinates pose must be specified.")
 
         # Extract the model information from the model list
+        self.coordinates = coordinates
         self.name = name
         self.parent = parent
         if isinstance(coordinates, (list,tuple)):
